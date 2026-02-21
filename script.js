@@ -1,85 +1,91 @@
 /**
- * Tasmik Quran 2026 - Core Logic (Professional Grade)
- * Author: Gemini Adaptive AI
+ * TASMIK QURAN DIGITAL 2026 - CORE ENGINE (PRO VERSION)
+ * ---------------------------------------------------
  * Backend: Google Apps Script (GAS)
- * Storage: Google Sheets (Tab LELAKI/PEREMPUAN)
+ * Frontend: GitHub Pages
+ * Database: Google Sheets (Multi-Tab)
+ * Integration: Telegram Bot API
  */
 
-// =========================================
-// 1. KONFIGURASI & STATE
-// =========================================
-const GAS_URL = "https://script.google.com/macros/s/AKfycbw1AOdJvjfJT5Edtl58OohjtHxldCqY2SC_v2cG1K5V044895CdyJNK-aKbVoHCmL09/exec";
+// 1. KONFIGURASI GLOBAL
+const CONFIG = {
+    // GANTIKAN URL INI DENGAN URL DEPLOYMENT GAS ANDA
+    GAS_URL: "https://script.google.com/macros/s/AKfycbw1AOdJvjfJT5Edtl58OohjtHxldCqY2SC_v2cG1K5V044895CdyJNK-aKbVoHCmL09/exec",
+    FILES: {
+        LELAKI: "peserta_lelaki.hjson",
+        PEREMPUAN: "peserta_perempuan.hjson",
+        SILIBUS: "silibus.hjson"
+    },
+    DEFAULT_USTAZ: "USTAZ AIMAN"
+};
 
-let currentUstaz = localStorage.getItem('ustaz_nama') || "USTAZ AIMAN";
-let dataPesertaLelaki = [];
-let dataPesertaPerempuan = [];
-let dataSilibus = {};
+// 2. STATE MANAGEMENT
+let state = {
+    currentUstaz: localStorage.getItem('ustaz_nama') || CONFIG.DEFAULT_USTAZ,
+    dataPesertaLelaki: [],
+    dataPesertaPerempuan: [],
+    dataSilibus: {},
+    selected: {
+        peserta: "",
+        jantina: "LELAKI",
+        surah: "An-Naas",
+        muka: "604",
+        tajwid: "3",
+        fasohah: "3"
+    },
+    isRecording: false,
+    audioBlob: null
+};
 
-// State Pilihan
-let selectedPeserta = "";
-let selectedSurah = "An-Naas";
-let selectedTajwid = "3";
-let selectedFasohah = "3";
-
-// Audio State
-let mediaRecorder;
-let audioChunks = [];
-let audioBlob = null;
-let isRecording = false;
-
-// =========================================
-// 2. INITIALIZATION (STARTUP)
-// =========================================
-document.addEventListener('DOMContentLoaded', () => {
+// 3. INITIALIZATION
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log("🚀 System Initializing...");
     updateUstazUI();
-    initSystem();
-    setupWheelPickers();
+    await loadInitialData();
+    setupEventListeners();
+    renderRatingPickers();
 });
 
-async function initSystem() {
+// 4. DATA LOADING
+async function loadInitialData() {
     try {
-        const ts = new Date().getTime();
-        // Load HJSON files
+        const cacheBurst = `?v=${new Date().getTime()}`;
+        
         const [resL, resP, resS] = await Promise.all([
-            fetch(`peserta_lelaki.hjson?v=${ts}`),
-            fetch(`peserta_perempuan.hjson?v=${ts}`),
-            fetch(`silibus.hjson?v=${ts}`)
+            fetch(CONFIG.FILES.LELAKI + cacheBurst),
+            fetch(CONFIG.FILES.PEREMPUAN + cacheBurst),
+            fetch(CONFIG.FILES.SILIBUS + cacheBurst)
         ]);
 
-        const textL = await resL.text();
-        const textP = await resP.text();
-        const textS = await resS.text();
+        state.dataPesertaLelaki = Hjson.parse(await resL.text());
+        state.dataPesertaPerempuan = Hjson.parse(await resP.text());
+        state.dataSilibus = Hjson.parse(await resS.text());
 
-        dataPesertaLelaki = Hjson.parse(textL);
-        dataPesertaPerempuan = Hjson.parse(textP);
-        dataSilibus = Hjson.parse(textS);
-
-        loadPeserta(); // Load senarai nama default (Lelaki)
+        renderPesertaPicker();
         renderSurahPicker();
         
+        console.log("✅ Data Loaded Successfully");
     } catch (err) {
-        console.error("Initialization Error:", err);
-        alert("Gagal memuatkan data silibus/peserta. Sila periksa fail HJSON anda.");
+        console.error("❌ Data Load Error:", err);
+        alert("Ralat memuatkan data. Sila refresh halaman.");
     }
 }
 
-// =========================================
-// 3. UI RENDERING (WHEEL PICKERS)
-// =========================================
-
-function loadPeserta() {
+// 5. UI RENDERING LOGIC
+function renderPesertaPicker() {
     const jantina = document.getElementById('jantina').value;
-    const senarai = jantina === "LELAKI" ? dataPesertaLelaki : dataPesertaPerempuan;
+    state.selected.jantina = jantina;
+    const senarai = jantina === "LELAKI" ? state.dataPesertaLelaki : state.dataPesertaPerempuan;
     const wrapper = document.getElementById('peserta-wrapper');
     
     wrapper.innerHTML = "";
     senarai.forEach((p, index) => {
-        const item = document.createElement('div');
-        item.className = 'wheel-item';
-        item.textContent = p.nama;
-        item.onclick = () => selectItem('peserta', item, p.nama);
+        const item = createWheelItem(p.nama, () => {
+            state.selected.peserta = p.nama;
+            highlightSelected('peserta-wrapper', index);
+        });
         wrapper.appendChild(item);
-        if(index === 0) selectItem('peserta', item, p.nama); // Auto-select first
+        if(index === 0) item.click();
     });
 }
 
@@ -87,154 +93,160 @@ function renderSurahPicker() {
     const wrapper = document.getElementById('surah-wrapper');
     wrapper.innerHTML = "";
     
-    // Gabungkan semua surah dari semua tahap silibus
-    Object.values(dataSilibus).flat().forEach((s, index) => {
-        const item = document.createElement('div');
-        item.className = 'wheel-item';
-        item.innerHTML = `<span>${s.nama}</span> <small style="font-size:0.6rem; opacity:0.6;">(m/s ${s.ms})</small>`;
-        item.onclick = () => {
-            selectItem('surah', item, s.nama);
-            document.getElementById('muka').value = s.ms; // Auto-fill muka surat
-        };
+    // Flatten silibus data
+    let allSurah = [];
+    Object.keys(state.dataSilibus).forEach(tahap => {
+        state.dataSilibus[tahap].forEach(s => allSurah.push(s));
+    });
+
+    allSurah.forEach((s, index) => {
+        const item = createWheelItem(`${s.nama} <small>(m/s ${s.ms})</small>`, () => {
+            state.selected.surah = s.nama;
+            state.selected.muka = s.ms;
+            document.getElementById('muka').value = s.ms;
+            highlightSelected('surah-wrapper', index);
+        });
         wrapper.appendChild(item);
-        if(s.nama === "An-Naas") selectItem('surah', item, s.nama);
+        if(s.nama === "An-Naas") item.click();
     });
 }
 
-function setupWheelPickers() {
-    // Setup Rating Pickers (Tajwid & Fasohah)
-    const pickers = ['tajwid', 'fasohah'];
-    pickers.forEach(p => {
-        const wrapper = document.getElementById(`${p}-wrapper`);
+function renderRatingPickers() {
+    ['tajwid', 'fasohah'].forEach(type => {
+        const wrapper = document.getElementById(`${type}-wrapper`);
+        wrapper.innerHTML = "";
         for(let i=1; i<=5; i++) {
-            const item = document.createElement('div');
-            item.className = 'wheel-item';
-            item.textContent = i;
-            item.onclick = () => selectItem(p, item, i.toString());
+            const item = createWheelItem(i, () => {
+                state.selected[type] = i.toString();
+                highlightSelected(`${type}-wrapper`, i-1);
+            });
             wrapper.appendChild(item);
-            if(i === 3) selectItem(p, item, "3");
+            if(i === 3) item.click();
         }
     });
 }
 
-function selectItem(type, element, value) {
-    const parent = element.parentElement;
-    Array.from(parent.children).forEach(child => child.classList.remove('selected'));
-    element.classList.add('selected');
-    
-    // Update global state
-    if(type === 'peserta') selectedPeserta = value;
-    if(type === 'surah') selectedSurah = value;
-    if(type === 'tajwid') selectedTajwid = value;
-    if(type === 'fasohah') selectedFasohah = value;
-
-    // Center the selected item
-    element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+// 6. HELPER FUNCTIONS
+function createWheelItem(content, onClick) {
+    const div = document.createElement('div');
+    div.className = 'wheel-item';
+    div.innerHTML = content;
+    div.onclick = (e) => {
+        onClick();
+        div.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+    return div;
 }
 
-// =========================================
-// 4. AUDIO RECORDING LOGIC
-// =========================================
+function highlightSelected(wrapperId, index) {
+    const items = document.getElementById(wrapperId).children;
+    Array.from(items).forEach(item => item.classList.remove('selected'));
+    if(items[index]) items[index].classList.add('selected');
+}
+
+// 7. ACTION HANDLERS (SUBMISSION)
+async function hantarTasmik() {
+    const mukaInput = document.getElementById('muka').value;
+    const ulasan = document.getElementById('catatan').value;
+
+    if (!state.selected.peserta || !mukaInput) {
+        alert("⚠️ Sila pastikan nama peserta dan muka surat diisi!");
+        return;
+    }
+
+    const payload = {
+        ustaz: state.currentUstaz,
+        peserta: state.selected.peserta,
+        jantina: state.selected.jantina,
+        surah: state.selected.surah,
+        muka: mukaInput,
+        tajwid: state.selected.tajwid,
+        fasohah: state.selected.fasohah,
+        ulasan: ulasan || "-"
+    };
+
+    // UI Feedback
+    const btn = document.getElementById('submitBtn');
+    const originalContent = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+    try {
+        // Post to Google Apps Script
+        await fetch(CONFIG.GAS_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Penting untuk bypass CORS Policy GAS
+            cache: 'no-cache',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        // Kerana 'no-cors', kita tak boleh baca response body. 
+        // Kita gunakan timeout sebagai simulasi success feedback.
+        alert(`✅ REKOD BERJAYA!\nNama: ${payload.peserta}\nSurah: ${payload.surah}`);
+        location.reload();
+
+    } catch (err) {
+        console.error("Submission Error:", err);
+        alert("❌ Ralat penghantaran. Sila cuba lagi.");
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+    }
+}
+
+// 8. AUDIO RECORDING (BROWSER COMPATIBLE)
+let mediaRecorder;
+let chunks = [];
 
 async function toggleRecording() {
     const btn = document.getElementById('recordBtn');
     
-    if (!isRecording) {
+    if (!state.isRecording) {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
+            chunks = [];
 
-            mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+            mediaRecorder.ondataavailable = e => chunks.push(e.data);
             mediaRecorder.onstop = () => {
-                audioBlob = new Blob(audioChunks, { type: 'audio/ogg; codecs=opus' });
-                const audioUrl = URL.createObjectURL(audioBlob);
-                document.getElementById('audioPlayback').src = audioUrl;
+                state.audioBlob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
+                console.log("🎙️ Recording Captured");
             };
 
             mediaRecorder.start();
-            isRecording = true;
+            state.isRecording = true;
             btn.classList.add('recording');
             btn.innerHTML = '<i class="fa-solid fa-stop"></i>';
         } catch (err) {
-            alert("Sila benarkan akses mikrofon untuk merakam.");
+            alert("Akses mikrofon diperlukan untuk merakam.");
         }
     } else {
         mediaRecorder.stop();
-        isRecording = false;
+        state.isRecording = false;
         btn.classList.remove('recording');
         btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
     }
 }
 
-// =========================================
-// 5. PENGHANTARAN DATA (GAS)
-// =========================================
-
-async function hantarTasmik() {
-    const jantina = document.getElementById('jantina').value;
-    const muka = document.getElementById('muka').value;
-    const ulasan = document.getElementById('catatan').value;
-
-    if (!selectedPeserta || !muka) {
-        alert("⚠️ Ralat: Nama peserta atau muka surat tidak lengkap.");
-        return;
-    }
-
-    const payload = {
-        ustaz: currentUstaz,
-        peserta: selectedPeserta,
-        jantina: jantina,
-        surah: selectedSurah,
-        muka: muka,
-        tajwid: selectedTajwid,
-        fasohah: selectedFasohah,
-        ulasan: ulasan
-    };
-
-    // UI Loading State
-    const submitBtn = document.getElementById('submitBtn');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-
-    try {
-        // 1. Hantar Data ke Google Sheets & Telegram via GAS
-        await fetch(GAS_URL, {
-            method: 'POST',
-            mode: 'no-cors', // Penting untuk GAS
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        // Kerana 'no-cors', kita tak boleh baca response body, 
-        // tapi jika fetch tidak masuk catch block, ia dikira berjaya.
-        
-        alert(`✅ Rekod ${selectedPeserta} berjaya dihantar!`);
-        location.reload();
-
-    } catch (error) {
-        console.error("Submission Error:", error);
-        alert("❌ Ralat sistem. Sila cuba lagi.");
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
-    }
-}
-
-// =========================================
-// 6. UTILITIES
-// =========================================
-
+// 9. UTILITIES & STORAGE
 function toggleUstaz() {
-    const nama = prompt("Masukkan Nama Pentashih:", currentUstaz);
-    if (nama) {
-        currentUstaz = nama.toUpperCase();
-        localStorage.setItem('ustaz_nama', currentUstaz);
+    const newName = prompt("Nama Pentashih:", state.currentUstaz);
+    if (newName && newName.trim() !== "") {
+        state.currentUstaz = newName.toUpperCase();
+        localStorage.setItem('ustaz_nama', state.currentUstaz);
         updateUstazUI();
     }
 }
 
 function updateUstazUI() {
-    const el = document.getElementById('ustazNameDisplay');
-    if (el) el.textContent = currentUstaz;
+    const display = document.getElementById('ustazNameDisplay');
+    if(display) display.textContent = state.currentUstaz;
+}
+
+function setupEventListeners() {
+    // Listener untuk pertukaran jantina
+    const jantinaSelect = document.getElementById('jantina');
+    if(jantinaSelect) {
+        jantinaSelect.addEventListener('change', renderPesertaPicker);
+    }
 }
