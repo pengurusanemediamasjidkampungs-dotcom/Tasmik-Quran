@@ -1,0 +1,256 @@
+/* Tasmik Quran 2026 - Professional Grade Stylesheet
+   Theme: Premium Deep Green & Glassmorphism
+*/
+
+:root {
+    --primary-green: #1e5128;
+    --accent-green: #4e9f3d;
+    --soft-green: #d8e9d4;
+    --deep-dark: #191a19;
+    --glass-bg: rgba(255, 255, 255, 0.95);
+    --shadow-sm: 0 4px 12px rgba(0,0,0,0.05);
+    --shadow-md: 0 10px 30px rgba(0,0,0,0.08);
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 1. Reset & Global Styles */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f4f1; /* Soft neutral background */
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: var(--deep-dark);
+    overflow-x: hidden;
+}
+
+body.no-scroll {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* 2. App Header (E-Commerce Style) */
+.app-header {
+    background: var(--primary-green);
+    color: white;
+    padding: 25px 20px 65px 20px;
+    border-bottom-left-radius: 35px;
+    border-bottom-right-radius: 35px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 8px 25px rgba(30, 81, 40, 0.2);
+}
+
+.header-logo {
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    object-fit: cover;
+    border: 2px solid rgba(255,255,255,0.3);
+}
+
+.pentashih-avatar {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 15px;
+    border-radius: 50px;
+    border: 1px solid rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    backdrop-filter: blur(5px);
+}
+
+.pentashih-avatar i {
+    font-size: 0.9rem;
+    color: var(--accent-green);
+}
+
+/* 3. Main Container & Layout */
+.main-container {
+    margin-top: -45px;
+    padding: 0 18px 120px 18px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* 4. Glass Cards (Professional UI) */
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(15px);
+    border-radius: 24px;
+    padding: 22px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: var(--shadow-md);
+    animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 5. Custom Inputs & Labels */
+.form-label-custom {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--primary-green);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.modern-input {
+    width: 100%;
+    background: #f8faf9;
+    border: 2px solid #eef2ee;
+    border-radius: 14px;
+    padding: 14px;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.modern-input:focus {
+    border-color: var(--accent-green);
+    background: #fff;
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(78, 159, 61, 0.1);
+}
+
+/* 6. Wheel Picker Logic (The Core) */
+.wheel-picker {
+    height: 100px; /* Reduced for professional look */
+    background: #ffffff;
+    border: 2px solid #f0f3f0;
+    border-radius: 16px;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    position: relative;
+    scrollbar-width: none; /* Hide for Firefox */
+}
+
+.wheel-picker::-webkit-scrollbar {
+    display: none; /* Hide for Chrome/Safari */
+}
+
+.wheel-item {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    scroll-snap-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #95a5a6;
+    transition: var(--transition);
+    padding: 0 15px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.wheel-item.selected {
+    color: var(--primary-green);
+    font-size: 1.1rem;
+    font-weight: 800;
+    background: var(--soft-green);
+}
+
+/* Center Highlight Indicator */
+.wheel-picker::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    height: 40px;
+    background: rgba(30, 81, 40, 0.05);
+    border-radius: 10px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* 7. Action Buttons (Floating Action Bar) */
+.fab-container {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 20px;
+    background: rgba(25, 26, 25, 0.9);
+    padding: 15px 35px;
+    border-radius: 50px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+    z-index: 1000;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.btn-fab {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: white;
+    border: none;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.btn-mic { 
+    background: #e74c3c; 
+    box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+}
+
+.btn-mic.recording {
+    animation: pulse 1.5s infinite;
+    background: #c0392b;
+}
+
+.btn-send { 
+    background: var(--accent-green); 
+    box-shadow: 0 5px 15px rgba(78, 159, 61, 0.3);
+}
+
+.btn-fab:active {
+    transform: scale(0.85);
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+}
+
+/* 8. Utilities */
+.text-xs { font-size: 0.7rem; }
+.fw-800 { font-weight: 800; }
+.divider {
+    height: 1px;
+    background: #eee;
+    margin: 15px 0;
+}
+
+/* Responsive Fixes */
+@media (max-width: 380px) {
+    .app-header h2 { font-size: 1.2rem; }
+    .main-container { padding: 0 12px 100px 12px; }
+    .glass-card { padding: 15px; }
+}
