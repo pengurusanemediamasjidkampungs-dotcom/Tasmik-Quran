@@ -1,6 +1,6 @@
 /* TASMIK QURAN 2026 - ULTIMATE PROFESSIONAL STYLESHEET 
    Theme: Emerald Glassmorphism (Mobile-First)
-   Version: 4.0 (Anti-Explode Logo Edition)
+   Version: 5.0 (Final Anti-Explode & Layout Fix)
 */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
@@ -27,68 +27,69 @@ html, body {
     background-color: var(--soft-bg);
     font-family: 'Plus Jakarta Sans', sans-serif;
     color: #191a19;
-    overflow: hidden; /* Penting untuk UX App */
+    overflow: hidden; /* Penting untuk UX App moden */
 }
 
-/* 2. TOP NAVIGATION (ANTI-EXPLODE LOGO) */
+/* 2. TOP NAVIGATION (FIX LOGO & PENTASHIH) */
 .btn-home-float {
     position: fixed !important;
     top: 15px !important;
     left: 15px !important;
-    width: 60px !important; 
-    height: 60px !important;
+    width: 50px !important; /* Kekunci fix saiz logo */
+    height: 50px !important;
     z-index: 5000;
-    background: #ffffff;
-    border-radius: 16px;
-    padding: 6px;
+    overflow: hidden;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: var(--shadow-premium);
     border: 1px solid rgba(0,0,0,0.05);
 }
 
 .btn-home-float img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain; /* Memastikan logo tidak pecah/meletup */
-    border-radius: 10px;
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Menghalang logo daripada pecah/meletup */
+    padding: 4px; /* Memberi ruang nafas pada logo */
 }
 
 .pentashih-float {
     position: fixed !important;
     top: 15px !important;
     right: 15px !important;
-    min-width: 70px;
-    height: 70px;
+    min-width: 65px;
+    height: 50px; /* Diselaraskan dengan ketinggian logo */
     z-index: 5000;
     background: var(--primary-green);
     color: white;
-    border-radius: 50%;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border: 3px solid #ffffff;
+    border: 2px solid #ffffff;
     box-shadow: var(--shadow-premium);
-    padding: 5px;
+    padding: 5px 12px;
     cursor: pointer;
     transition: var(--transition);
 }
 
 .pentashih-float small {
-    font-size: 0.6rem;
+    font-size: 0.65rem;
     font-weight: 800;
     text-align: center;
-    line-height: 1;
+    line-height: 1.1;
+    text-transform: uppercase;
 }
 
 /* 3. MAIN CONTAINER & CARD */
 .main-card {
     background: white;
-    margin: 100px 15px 20px 15px; /* Jarak dari top logo */
-    height: calc(100vh - 220px); /* Fit screen */
-    border-radius: 30px;
+    margin: 85px 15px 20px 15px !important; /* Ruang supaya tidak kena tindih dengan logo */
+    height: calc(100vh - 190px); /* Fit screen secara dinamik */
+    border-radius: 25px;
     box-shadow: var(--shadow-premium);
     display: flex;
     flex-direction: column;
@@ -98,19 +99,24 @@ html, body {
 }
 
 @keyframes slideUp {
-    from { opacity: 0; transform: translateY(30px); }
+    from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 .scroll-content {
-    padding: 25px 20px;
+    padding: 20px;
     overflow-y: auto;
     flex: 1;
+    scrollbar-width: none; /* Sembunyi scrollbar Firefox */
+}
+
+.scroll-content::-webkit-scrollbar {
+    display: none; /* Sembunyi scrollbar Chrome/Safari */
 }
 
 /* 4. FORM ELEMENTS */
 .section-group {
-    margin-bottom: 22px;
+    margin-bottom: 20px;
 }
 
 .form-label {
@@ -123,33 +129,35 @@ html, body {
     color: var(--primary-green);
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .modern-input {
     width: 100%;
     background: #f8faf9;
     border: 2px solid #eef2ee;
-    border-radius: 15px;
-    padding: 12px 18px;
-    font-size: 1rem;
+    border-radius: 12px;
+    padding: 10px 15px;
+    font-size: 0.95rem;
     font-weight: 600;
     transition: var(--transition);
     text-align: center;
+    color: #191a19;
 }
 
 .modern-input:focus {
     border-color: var(--accent-green);
     background: #ffffff;
+    outline: none;
     box-shadow: 0 0 0 4px rgba(78, 159, 61, 0.1);
 }
 
 /* 5. WHEEL PICKER UX */
 .wheel-picker {
-    height: 90px;
+    height: 85px;
     background: #fdfdfd;
     border: 2px solid #f1f4f1;
-    border-radius: 18px;
+    border-radius: 15px;
     overflow-y: auto;
     scroll-snap-type: y mandatory;
     position: relative;
@@ -158,6 +166,7 @@ html, body {
 
 .wheel-picker::-webkit-scrollbar { display: none; }
 
+/* Highlight Indicator Tengah */
 .wheel-picker::after {
     content: '';
     position: absolute;
@@ -165,20 +174,20 @@ html, body {
     left: 50%;
     transform: translate(-50%, -50%);
     width: 90%;
-    height: 40px;
+    height: 35px;
     background: rgba(30, 81, 40, 0.05);
-    border-radius: 12px;
+    border-radius: 10px;
     pointer-events: none;
     z-index: 1;
 }
 
 .wheel-item {
-    height: 45px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
     scroll-snap-align: center;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: #a0a0a0;
     transition: var(--transition);
@@ -187,14 +196,14 @@ html, body {
 
 .wheel-item.selected {
     color: var(--primary-green);
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 800;
 }
 
 /* 6. GRID LAYOUT FOR RATINGS */
 .row-ayat {
     display: flex;
-    gap: 15px;
+    gap: 12px;
 }
 
 .row-ayat > div {
@@ -202,23 +211,23 @@ html, body {
 }
 
 .rating-picker {
-    height: 70px;
+    height: 75px;
 }
 
 /* 7. ACTION BUTTONS (FAB) */
 .btn-record, .fab-send {
     position: fixed !important;
     bottom: 25px !important;
-    width: 65px !important;
-    height: 65px !important;
+    width: 60px !important;
+    height: 60px !important;
     border-radius: 50% !important;
     border: 4px solid #ffffff !important;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white !important;
-    font-size: 1.5rem !important;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important;
+    font-size: 1.3rem !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
     z-index: 5000 !important;
     cursor: pointer;
     transition: var(--transition);
@@ -232,7 +241,7 @@ html, body {
 .btn-record.recording {
     animation: pulse 1.5s infinite;
     background: #ff0000 !important;
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
 .fab-send {
@@ -240,19 +249,20 @@ html, body {
     background: #2ecc71 !important;
 }
 
-.btn-record:active, .fab-send:active {
-    transform: scale(0.9);
-}
-
 @keyframes pulse {
     0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7); }
-    70% { box-shadow: 0 0 0 15px rgba(255, 71, 87, 0); }
+    70% { box-shadow: 0 0 0 12px rgba(255, 71, 87, 0); }
     100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
 }
 
 /* 8. RESPONSIVE FIXES */
-@media (max-width: 375px) {
-    .main-card { margin-top: 90px; height: calc(100vh - 200px); }
-    .btn-home-float, .pentashih-float { width: 55px; height: 55px; }
-    .btn-record, .fab-send { width: 60px; height: 60px; }
+@media (max-width: 380px) {
+    .main-card { 
+        margin-top: 80px !important; 
+        height: calc(100vh - 180px); 
+    }
+    .btn-home-float, .pentashih-float { 
+        top: 10px !important;
+    }
+    .modern-input { padding: 8px; }
 }
