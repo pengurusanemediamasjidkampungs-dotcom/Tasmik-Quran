@@ -1,7 +1,8 @@
 /**
- * TASMIK QURAN DIGITAL 2026 - CORE ENGINE (ULTRA PRO)
+ * TASMIK QURAN DIGITAL 2026 - CORE ENGINE (ULTRA PRO V2)
  * ---------------------------------------------------
  * Integrasi: GitHub Pages + Google Apps Script + Google Sheets + Telegram Bot API
+ * Update: Robust Fetch Logic & Enhanced Error Handling
  */
 
 // 1. KONFIGURASI GLOBAL
@@ -13,9 +14,9 @@ const CONFIG = {
     },
     CHAT_ID: "-1003513910680",
     FILES: {
-        LELAKI: "peserta_lelaki.hjson",
-        PEREMPUAN: "peserta_perempuan.hjson",
-        SILIBUS: "silibus.hjson"
+        LELAKI: "./peserta_lelaki.hjson",
+        PEREMPUAN: "./peserta_perempuan.hjson",
+        SILIBUS: "./silibus.hjson"
     }
 };
 
@@ -48,26 +49,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderRatingPickers();
 });
 
-// 4. DATA LOADING (HJSON)
+// 4. DATA LOADING (ROBUST FETCH HJSON)
 async function loadInitialData() {
+    const ts = new Date().getTime(); // Anti-cache timestamp
+    const errorBanner = (msg) => {
+        const div = document.createElement('div');
+        div.style = "position:fixed; top:0; left:0; background:#ff4757; color:white; width:100%; z-index:9999; text-align:center; padding:10px; font-weight:bold; font-size:12px; box-shadow:0 2px 10px rgba(0,0,0,0.2);";
+        div.innerHTML = `⚠️ RALAT SISTEM: ${msg} <br><small>Sila semak nama fail di GitHub (Case-Sensitive)</small>`;
+        document.body.prepend(div);
+    };
+
     try {
-        const ts = new Date().getTime();
+        console.log("📦 Fetching data files...");
+        
+        // Memulakan semua fetch secara serentak (Parallel)
         const [resL, resP, resS] = await Promise.all([
             fetch(`${CONFIG.FILES.LELAKI}?v=${ts}`),
             fetch(`${CONFIG.FILES.PEREMPUAN}?v=${ts}`),
             fetch(`${CONFIG.FILES.SILIBUS}?v=${ts}`)
         ]);
 
+        // Semak status respon setiap fail
+        if (!resL.ok) throw new Error(`Fail Peserta Lelaki tidak ditemui (${resL.status})`);
+        if (!resP.ok) throw new Error(`Fail Peserta Perempuan tidak ditemui (${resP.status})`);
+        if (!resS.ok) throw new Error(`Fail Silibus tidak ditemui (${resS.status})`);
+
+        // Parse data menggunakan HJSON library
         state.dataPesertaLelaki = Hjson.parse(await resL.text());
         state.dataPesertaPerempuan = Hjson.parse(await resP.text());
         state.dataSilibus = Hjson.parse(await resS.text());
 
+        // Render UI jika data berjaya dimuatkan
         renderPesertaPicker();
         renderSurahPicker();
-        console.log("✅ Data HJSON Loaded");
+        
+        console.log("✅ Data HJSON Loaded Successfully");
+
     } catch (err) {
-        console.error("❌ Load Error:", err);
-        alert("Gagal memuatkan data peserta/silibus.");
+        console.error("❌ Critical Load Error:", err.message);
+        errorBanner(err.message);
     }
 }
 
@@ -78,7 +98,14 @@ function renderPesertaPicker() {
     const senarai = jantina === "LELAKI" ? state.dataPesertaLelaki : state.dataPesertaPerempuan;
     const wrapper = document.getElementById('peserta-wrapper');
     
+    if(!wrapper) return;
     wrapper.innerHTML = "";
+
+    if (senarai.length === 0) {
+        wrapper.innerHTML = "<div class='wheel-item'>Tiada Data</div>";
+        return;
+    }
+
     senarai.forEach((p, index) => {
         const item = createWheelItem(p.nama, () => {
             state.selected.peserta = p.nama;
@@ -91,7 +118,9 @@ function renderPesertaPicker() {
 
 function renderSurahPicker() {
     const wrapper = document.getElementById('surah-wrapper');
+    if(!wrapper) return;
     wrapper.innerHTML = "";
+    
     let allSurahs = [];
     Object.values(state.dataSilibus).forEach(group => {
         group.forEach(s => allSurahs.push(s));
@@ -101,7 +130,8 @@ function renderSurahPicker() {
         const item = createWheelItem(`${s.nama} <small>(m/s ${s.ms})</small>`, () => {
             state.selected.surah = s.nama;
             state.selected.muka = s.ms;
-            document.getElementById('muka').value = s.ms;
+            const mukaInput = document.getElementById('muka');
+            if(mukaInput) mukaInput.value = s.ms;
             highlightSelected('surah-wrapper', index);
         });
         wrapper.appendChild(item);
@@ -112,6 +142,7 @@ function renderSurahPicker() {
 function renderRatingPickers() {
     ['tajwid', 'fasohah'].forEach(type => {
         const wrapper = document.getElementById(`${type}-wrapper`);
+        if(!wrapper) return;
         wrapper.innerHTML = "";
         for(let i=1; i<=5; i++) {
             const item = createWheelItem(i, () => {
@@ -144,7 +175,8 @@ function highlightSelected(wrapperId, index) {
 // 6. AUDIO RECORDING (VOICE NOTE LOGIC)
 async function toggleRecording() {
     const btn = document.getElementById('recordBtn');
-    
+    if(!btn) return;
+
     if (!state.isRecording) {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -154,7 +186,10 @@ async function toggleRecording() {
             state.mediaRecorder.ondataavailable = e => state.audioChunks.push(e.data);
             state.mediaRecorder.onstop = () => {
                 state.audioBlob = new Blob(state.audioChunks, { type: 'audio/ogg; codecs=opus' });
-                document.getElementById('audioPlayback').src = URL.createObjectURL(state.audioBlob);
+                const audioPrev = document.getElementById('audioPlayback');
+                const audioCont = document.getElementById('audio-container');
+                if(audioPrev) audioPrev.src = URL.createObjectURL(state.audioBlob);
+                if(audioCont) audioCont.classList.remove('d-none');
             };
 
             state.mediaRecorder.start();
@@ -162,7 +197,7 @@ async function toggleRecording() {
             btn.classList.add('recording');
             btn.innerHTML = '<i class="fa-solid fa-stop"></i>';
         } catch (err) {
-            alert("Akses mikrofon ditolak.");
+            alert("Ralat Mikrofon: Pastikan anda memberi kebenaran akses mikrofon di pelayar.");
         }
     } else {
         state.mediaRecorder.stop();
@@ -176,11 +211,14 @@ async function toggleRecording() {
 async function hantarTasmik() {
     const mukaVal = document.getElementById('muka').value;
     const ulasanVal = document.getElementById('catatan').value;
+    const btn = document.getElementById('submitBtn');
 
     if (!state.selected.peserta || !mukaVal) {
-        alert("⚠️ Nama peserta atau muka surat tidak lengkap!");
+        alert("⚠️ Maklumat tidak lengkap! Sila pastikan Nama Peserta dan Muka Surat diisi.");
         return;
     }
+
+    if(!confirm(`Hantar rekod tasmik untuk ${state.selected.peserta}?`)) return;
 
     const payload = {
         ustaz: state.currentUstaz,
@@ -193,7 +231,6 @@ async function hantarTasmik() {
         ulasan: ulasanVal || "-"
     };
 
-    const btn = document.getElementById('submitBtn');
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
@@ -205,13 +242,13 @@ async function hantarTasmik() {
             body: JSON.stringify(payload)
         });
 
-        // B. Hantar Audio ke Telegram (Direct API)
+        // B. Hantar Audio ke Telegram
         if (state.audioBlob) {
             const token = CONFIG.BOTS[state.selected.jantina];
             const formData = new FormData();
             formData.append('chat_id', CONFIG.CHAT_ID);
             formData.append('voice', state.audioBlob, `tasmik_${payload.peserta}.ogg`);
-            formData.append('caption', `🎙️ RAKAMAN TASMIK\n👤 ${payload.peserta}\n📖 ${payload.surah}`);
+            formData.append('caption', `🎙️ RAKAMAN TASMIK\n👤 ${payload.peserta}\n📖 ${payload.surah}\n✨ Tajwid: ${payload.tajwid} | Fasohah: ${payload.fasohah}\n✍️ Nota: ${payload.ulasan}`);
 
             await fetch(`https://api.telegram.org/bot${token}/sendVoice`, {
                 method: 'POST',
@@ -219,12 +256,12 @@ async function hantarTasmik() {
             });
         }
 
-        alert("✅ Rekod & Audio Berjaya Dihantar!");
+        alert("✅ Berjaya! Rekod tasmik dan audio telah disimpan.");
         location.reload();
 
     } catch (err) {
         console.error("Submission Error:", err);
-        alert("Gagal menghantar rekod.");
+        alert("Ralat penghantaran. Sila cuba sebentar lagi.");
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
@@ -233,9 +270,9 @@ async function hantarTasmik() {
 
 // 8. UTILITIES
 function toggleUstaz() {
-    const n = prompt("Nama Pentashih:", state.currentUstaz);
-    if (n) {
-        state.currentUstaz = n.toUpperCase();
+    const n = prompt("Sila masukkan nama Pentashih / Ustaz:", state.currentUstaz);
+    if (n && n.trim() !== "") {
+        state.currentUstaz = n.toUpperCase().trim();
         localStorage.setItem('ustaz_nama', state.currentUstaz);
         updateUstazUI();
     }
