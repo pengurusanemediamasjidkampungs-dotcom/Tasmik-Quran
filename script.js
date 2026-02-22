@@ -1,8 +1,8 @@
 /**
- * TASMIK QURAN DIGITAL 2026 - CORE ENGINE (ULTRA PRO V2.1)
+ * TASMIK QURAN DIGITAL 2026 - CORE ENGINE (ULTRA PRO V2.2)
  * ---------------------------------------------------
  * Integrasi: GitHub Pages + Google Apps Script + Google Sheets + Telegram Bot API
- * Update: Robust Fetch Logic, Enhanced Error Handling & Data Fallback
+ * Update: Auto-Switch Pentashih (Aiman/Nuaim) & Robust Data Fallback
  */
 
 // 1. KONFIGURASI GLOBAL
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // 4. DATA LOADING (ROBUST FETCH HJSON WITH FALLBACK)
 async function loadInitialData() {
-    const ts = new Date().getTime(); // Anti-cache timestamp
+    const ts = new Date().getTime(); 
     const errorBanner = (msg) => {
         const div = document.createElement('div');
         div.id = "error-banner-top";
@@ -63,24 +63,20 @@ async function loadInitialData() {
     try {
         console.log("📦 Fetching data files...");
         
-        // Memulakan semua fetch secara serentak (Parallel)
         const [resL, resP, resS] = await Promise.all([
             fetch(`${CONFIG.FILES.LELAKI}?v=${ts}`),
             fetch(`${CONFIG.FILES.PEREMPUAN}?v=${ts}`),
             fetch(`${CONFIG.FILES.SILIBUS}?v=${ts}`)
         ]);
 
-        // Semak status respon setiap fail
         if (!resL.ok) throw new Error(`Fail Peserta Lelaki tidak ditemui (${resL.status})`);
         if (!resP.ok) throw new Error(`Fail Peserta Perempuan tidak ditemui (${resP.status})`);
         if (!resS.ok) throw new Error(`Fail Silibus tidak ditemui (${resS.status})`);
 
-        // Parse data menggunakan HJSON library
         state.dataPesertaLelaki = Hjson.parse(await resL.text());
         state.dataPesertaPerempuan = Hjson.parse(await resP.text());
         state.dataSilibus = Hjson.parse(await resS.text());
 
-        // Render UI jika data berjaya dimuatkan
         renderPesertaPicker();
         renderSurahPicker();
         
@@ -91,7 +87,6 @@ async function loadInitialData() {
         errorBanner(err.message);
 
         // --- LOGIK KEBAL DATA (FALLBACK) ---
-        // Jika gagal muat, masukkan data amaran ke dalam wheel picker supaya app tidak kosong
         state.dataPesertaLelaki = [{nama: "⚠️ FAIL LELAKI TIADA"}];
         state.dataPesertaPerempuan = [{nama: "⚠️ FAIL PEREMPUAN TIADA"}];
         state.dataSilibus = { "Asas": [{nama: "Sila Refresh", ms: "0"}] };
@@ -103,7 +98,8 @@ async function loadInitialData() {
 
 // 5. UI RENDERING (WHEEL PICKERS)
 function renderPesertaPicker() {
-    const jantina = document.getElementById('jantina').value;
+    const jSelect = document.getElementById('jantina');
+    const jantina = jSelect ? jSelect.value : "LELAKI";
     state.selected.jantina = jantina;
     const senarai = jantina === "LELAKI" ? state.dataPesertaLelaki : state.dataPesertaPerempuan;
     const wrapper = document.getElementById('peserta-wrapper');
@@ -231,7 +227,7 @@ async function hantarTasmik() {
     const ulasanVal = document.getElementById('catatan').value;
     const btn = document.getElementById('submitBtn');
 
-    if (!state.selected.peserta || !mukaVal || state.selected.peserta.includes("FAIL TIADA")) {
+    if (!state.selected.peserta || !mukaVal || state.selected.peserta.includes("TIADA")) {
         alert("⚠️ Maklumat tidak lengkap atau data gagal dimuat!");
         return;
     }
@@ -253,14 +249,12 @@ async function hantarTasmik() {
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
     try {
-        // A. Hantar ke Google Sheets (GAS)
         await fetch(CONFIG.GAS_URL, {
             method: 'POST',
             mode: 'no-cors',
             body: JSON.stringify(payload)
         });
 
-        // B. Hantar Audio ke Telegram
         if (state.audioBlob) {
             const token = CONFIG.BOTS[state.selected.jantina];
             const formData = new FormData();
@@ -286,19 +280,31 @@ async function hantarTasmik() {
     }
 }
 
-// 8. UTILITIES
+// 8. UTILITIES (AUTO-SWITCH TOGGLE)
 function toggleUstaz() {
-    const n = prompt("Sila masukkan nama Pentashih / Ustaz:", state.currentUstaz);
-    if (n && n.trim() !== "") {
-        state.currentUstaz = n.toUpperCase().trim();
-        localStorage.setItem('ustaz_nama', state.currentUstaz);
-        updateUstazUI();
+    // Logik tukar nama secara bergilir
+    if (state.currentUstaz.includes("AIMAN")) {
+        state.currentUstaz = "USTAZ NUAIM";
+    } else {
+        state.currentUstaz = "USTAZ AIMAN";
     }
+
+    localStorage.setItem('ustaz_nama', state.currentUstaz);
+    updateUstazUI();
+    
+    // Memberi maklum balas visual melalui console
+    console.log(`🔄 Pentashih ditukar kepada: ${state.currentUstaz}`);
 }
 
 function updateUstazUI() {
     const el = document.getElementById('ustazNameDisplay');
     if(el) el.textContent = state.currentUstaz;
+    
+    const floatEl = document.querySelector('.pentashih-float small');
+    if(floatEl) {
+        const namaSahaja = state.currentUstaz.replace("USTAZ ", "");
+        floatEl.innerHTML = `PENTASHIH<br>${namaSahaja}`;
+    }
 }
 
 function setupEventListeners() {
