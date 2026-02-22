@@ -1,27 +1,16 @@
-/* TASMIK QURAN 2026 - PROFESSIONAL GRADE CORE STYLESHEET
-   Theme: Emerald Sanctuary (Premium Dark Green & Glassmorphism)
-   Author: Gemini AI Adaptive Engine
+/* TASMIK QURAN 2026 - ULTIMATE PROFESSIONAL STYLESHEET 
+   Theme: Emerald Glassmorphism (Mobile-First)
+   Version: 4.0 (Anti-Explode Logo Edition)
 */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
 
 :root {
-    /* Color Palette */
     --primary-green: #1e5128;
     --accent-green: #4e9f3d;
-    --soft-green: #d8e9d4;
-    --deep-dark: #191a19;
-    --error-red: #e74c3c;
-    --success-green: #2ecc71;
-    
-    /* UI Elements */
-    --glass-bg: rgba(255, 255, 255, 0.92);
-    --glass-border: rgba(255, 255, 255, 0.4);
-    --shadow-sm: 0 4px 12px rgba(0,0,0,0.05);
-    --shadow-md: 0 10px 30px rgba(0,0,0,0.08);
-    --shadow-lg: 0 15px 35px rgba(0,0,0,0.15);
-    
-    /* Animation */
+    --soft-bg: #f2f7f3;
+    --glass-bg: rgba(255, 255, 255, 0.95);
+    --shadow-premium: 0 10px 30px rgba(0,0,0,0.08);
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -29,154 +18,138 @@
 * {
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
-    outline: none;
 }
 
 html, body {
     height: 100%;
     margin: 0;
     padding: 0;
-    background-color: #f2f7f3; /* Neutral mint tint */
+    background-color: var(--soft-bg);
     font-family: 'Plus Jakarta Sans', sans-serif;
-    color: var(--deep-dark);
-    line-height: 1.6;
-    overflow-x: hidden;
+    color: #191a19;
+    overflow: hidden; /* Penting untuk UX App */
 }
 
-body.no-scroll {
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-}
-
-/* 2. NAVIGATION & FLOATING UI */
+/* 2. TOP NAVIGATION (ANTI-EXPLODE LOGO) */
 .btn-home-float {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    width: 48px;
-    height: 48px;
-    z-index: 1100;
-    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
-    transition: var(--transition);
+    position: fixed !important;
+    top: 15px !important;
+    left: 15px !important;
+    width: 60px !important; 
+    height: 60px !important;
+    z-index: 5000;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-premium);
+    border: 1px solid rgba(0,0,0,0.05);
 }
 
 .btn-home-float img {
-    width: 100%;
-    height: 100%;
-    border-radius: 14px;
-    object-fit: cover;
-    border: 2px solid white;
-}
-
-.btn-home-float:active {
-    transform: scale(0.9);
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* Memastikan logo tidak pecah/meletup */
+    border-radius: 10px;
 }
 
 .pentashih-float {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 10px 18px;
+    position: fixed !important;
+    top: 15px !important;
+    right: 15px !important;
+    min-width: 70px;
+    height: 70px;
+    z-index: 5000;
     background: var(--primary-green);
     color: white;
-    border-radius: 50px;
-    z-index: 1100;
+    border-radius: 50%;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 8px;
-    box-shadow: var(--shadow-md);
-    border: 1.5px solid rgba(255,255,255,0.2);
+    justify-content: center;
+    border: 3px solid #ffffff;
+    box-shadow: var(--shadow-premium);
+    padding: 5px;
     cursor: pointer;
     transition: var(--transition);
 }
 
 .pentashih-float small {
-    font-weight: 700;
-    font-size: 0.75rem;
-    letter-spacing: 0.5px;
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-align: center;
+    line-height: 1;
 }
 
-.pentashih-float:active {
-    transform: translateY(2px);
-    background: var(--deep-dark);
-}
-
-/* 3. MAIN CONTAINER & LAYOUT */
+/* 3. MAIN CONTAINER & CARD */
 .main-card {
-    margin-top: 100px; /* Space for floaters */
-    padding: 0 15px 120px 15px;
-    max-width: 550px;
-    margin-left: auto;
-    margin-right: auto;
+    background: white;
+    margin: 100px 15px 20px 15px; /* Jarak dari top logo */
+    height: calc(100vh - 220px); /* Fit screen */
+    border-radius: 30px;
+    box-shadow: var(--shadow-premium);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.03);
+    animation: slideUp 0.6s ease-out;
 }
 
-.scroll-content {
-    animation: fadeIn 0.6s ease-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(15px); }
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* 4. GLASSMORPHISM COMPONENTS */
+.scroll-content {
+    padding: 25px 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* 4. FORM ELEMENTS */
 .section-group {
-    background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 22px;
-    padding: 20px;
-    margin-bottom: 20px;
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--shadow-md);
-    transition: var(--transition);
+    margin-bottom: 22px;
 }
 
-.section-group:focus-within {
-    border-color: var(--accent-green);
-    box-shadow: var(--shadow-lg);
-}
-
-/* 5. MODERN INPUTS & TYPOGRAPHY */
 .form-label {
-    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.75rem;
     font-weight: 800;
     color: var(--primary-green);
     text-transform: uppercase;
-    letter-spacing: 1.2px;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    opacity: 0.8;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
 }
 
 .modern-input {
     width: 100%;
     background: #f8faf9;
-    border: 1.5px solid #eef2ee;
-    border-radius: 12px;
-    padding: 12px 16px;
-    font-size: 0.95rem;
+    border: 2px solid #eef2ee;
+    border-radius: 15px;
+    padding: 12px 18px;
+    font-size: 1rem;
     font-weight: 600;
-    color: var(--deep-dark);
     transition: var(--transition);
+    text-align: center;
 }
 
 .modern-input:focus {
-    background: #ffffff;
     border-color: var(--accent-green);
-    box-shadow: 0 0 0 4px rgba(78, 159, 61, 0.08);
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(78, 159, 61, 0.1);
 }
 
-/* 6. WHEEL PICKER UX (THE HEART) */
+/* 5. WHEEL PICKER UX */
 .wheel-picker {
-    height: 100px;
+    height: 90px;
     background: #fdfdfd;
-    border: 1.5px solid #f1f4f1;
-    border-radius: 14px;
+    border: 2px solid #f1f4f1;
+    border-radius: 18px;
     overflow-y: auto;
     scroll-snap-type: y mandatory;
     position: relative;
@@ -185,23 +158,22 @@ body.no-scroll {
 
 .wheel-picker::-webkit-scrollbar { display: none; }
 
-/* Selector Indicator Overlay */
 .wheel-picker::after {
     content: '';
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 92%;
+    width: 90%;
     height: 40px;
-    background: rgba(30, 81, 40, 0.06);
-    border-radius: 8px;
+    background: rgba(30, 81, 40, 0.05);
+    border-radius: 12px;
     pointer-events: none;
     z-index: 1;
 }
 
 .wheel-item {
-    height: 50px;
+    height: 45px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -210,101 +182,77 @@ body.no-scroll {
     font-weight: 600;
     color: #a0a0a0;
     transition: var(--transition);
-    padding: 0 20px;
     cursor: pointer;
 }
 
 .wheel-item.selected {
     color: var(--primary-green);
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     font-weight: 800;
 }
 
-/* 7. RATING & GRID LAYOUT */
+/* 6. GRID LAYOUT FOR RATINGS */
 .row-ayat {
     display: flex;
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: 15px;
 }
 
-.row-ayat > div { flex: 1; }
+.row-ayat > div {
+    flex: 1;
+}
 
 .rating-picker {
-    height: 80px;
+    height: 70px;
 }
 
-/* 8. PROFESSIONAL ACTION BUTTONS (FAB) */
-.action-buttons {
-    position: fixed;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    z-index: 2000;
-}
-
+/* 7. ACTION BUTTONS (FAB) */
 .btn-record, .fab-send {
-    width: 65px;
-    height: 65px;
-    border-radius: 50%;
-    border: none;
+    position: fixed !important;
+    bottom: 25px !important;
+    width: 65px !important;
+    height: 65px !important;
+    border-radius: 50% !important;
+    border: 4px solid #ffffff !important;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.4rem;
-    color: white;
+    color: white !important;
+    font-size: 1.5rem !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important;
+    z-index: 5000 !important;
     cursor: pointer;
     transition: var(--transition);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
 }
 
 .btn-record {
-    background: var(--error-red);
+    left: 25px !important;
+    background: #ff4757 !important;
 }
 
 .btn-record.recording {
-    animation: pulse-red 1.5s infinite;
-    background: #c0392b;
-    border: 3px solid white;
+    animation: pulse 1.5s infinite;
+    background: #ff0000 !important;
+    transform: scale(1.1);
 }
 
 .fab-send {
-    background: var(--accent-green);
+    right: 25px !important;
+    background: #2ecc71 !important;
 }
 
 .btn-record:active, .fab-send:active {
     transform: scale(0.9);
 }
 
-@keyframes pulse-red {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
-    70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); }
-    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(255, 71, 87, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
 }
 
-/* 9. AUDIO PREVIEW UI */
-#audio-container {
-    background: rgba(255,255,255,0.5);
-    padding: 15px;
-    border-radius: 15px;
-    margin-top: 10px;
+/* 8. RESPONSIVE FIXES */
+@media (max-width: 375px) {
+    .main-card { margin-top: 90px; height: calc(100vh - 200px); }
+    .btn-home-float, .pentashih-float { width: 55px; height: 55px; }
+    .btn-record, .fab-send { width: 60px; height: 60px; }
 }
-
-audio {
-    height: 35px;
-    filter: sepia(20%) saturate(70%) hue-rotate(80deg);
-}
-
-/* 10. RESPONSIVE OPTIMIZATION */
-@media (max-width: 400px) {
-    .main-card { margin-top: 85px; }
-    .pentashih-float { padding: 8px 14px; }
-    .btn-record, .fab-send { width: 58px; height: 58px; font-size: 1.2rem; }
-}
-
-/* Utilities */
-.mt-3 { margin-top: 1rem !important; }
-.d-none { display: none !important; }
-.w-100 { width: 100% !important; }
