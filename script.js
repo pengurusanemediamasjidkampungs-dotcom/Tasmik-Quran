@@ -1,17 +1,14 @@
 /**
- * TASMIK QURAN DIGITAL 2026 - CORE ENGINE (ULTRA PRO V2.2)
+ * TASMIK QURAN DIGITAL 2026 - CORE ENGINE (ULTRA PRO V3.0)
  * ---------------------------------------------------
  * Integrasi: GitHub Pages + Google Apps Script + Google Sheets + Telegram Bot API
- * Update: Auto-Switch Pentashih (Aiman/Nuaim) & Robust Data Fallback
+ * Update: Multi-Tahap (1-6) Filter, Auto-Fill Ayat, & 12-Column Data Payload
  */
 
 // 1. KONFIGURASI GLOBAL
 const CONFIG = {
     GAS_URL: "https://script.google.com/macros/s/AKfycbw1AOdJvjfJT5Edtl58OohjtHxldCqY2SC_v2cG1K5V044895CdyJNK-aKbVoHCmL09/exec",
-    BOTS: {
-        LELAKI: "8154726215:AAG-Pa2UNRHBxP0-j3fffQJ0rMBE8hZt5Rw",
-        PEREMPUAN: "8559339927:AAFWwLyDpS4Z53k1fjpQD0UScq2fUmKY2Gk"
-    },
+    BOT_TOKEN: "8154726215:AAG-Pa2UNRHBxP0-j3fffQJ0rMBE8hZt5Rw",
     CHAT_ID: "-1003513910680",
     FILES: {
         LELAKI: "./peserta_lelaki.hjson",
@@ -29,8 +26,9 @@ let state = {
     selected: {
         peserta: "",
         jantina: "LELAKI",
-        surah: "An-Naas",
-        muka: "604",
+        tahap: "1",
+        surah: "",
+        muka: "",
         tajwid: "3",
         fasohah: "3"
     },
@@ -46,57 +44,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateUstazUI();
     await loadInitialData();
     setupEventListeners();
+    renderTahapPicker(); // Menjalankan filter tahap secara automatik
     renderRatingPickers();
 });
 
-// 4. DATA LOADING (ROBUST FETCH HJSON WITH FALLBACK)
+// 4. DATA LOADING
 async function loadInitialData() {
     const ts = new Date().getTime(); 
-    const errorBanner = (msg) => {
-        const div = document.createElement('div');
-        div.id = "error-banner-top";
-        div.style = "position:fixed; top:0; left:0; background:#ff4757; color:white; width:100%; z-index:9999; text-align:center; padding:10px; font-weight:bold; font-size:12px; box-shadow:0 2px 10px rgba(0,0,0,0.2);";
-        div.innerHTML = `⚠️ RALAT SISTEM: ${msg} <br><small>Sila semak nama fail di GitHub (Case-Sensitive)</small>`;
-        document.body.prepend(div);
-    };
-
     try {
-        console.log("📦 Fetching data files...");
-        
         const [resL, resP, resS] = await Promise.all([
             fetch(`${CONFIG.FILES.LELAKI}?v=${ts}`),
             fetch(`${CONFIG.FILES.PEREMPUAN}?v=${ts}`),
             fetch(`${CONFIG.FILES.SILIBUS}?v=${ts}`)
         ]);
 
-        if (!resL.ok) throw new Error(`Fail Peserta Lelaki tidak ditemui (${resL.status})`);
-        if (!resP.ok) throw new Error(`Fail Peserta Perempuan tidak ditemui (${resP.status})`);
-        if (!resS.ok) throw new Error(`Fail Silibus tidak ditemui (${resS.status})`);
+        if (!resL.ok || !resP.ok || !resS.ok) throw new Error("Gagal memuatkan fail data.");
 
         state.dataPesertaLelaki = Hjson.parse(await resL.text());
         state.dataPesertaPerempuan = Hjson.parse(await resP.text());
         state.dataSilibus = Hjson.parse(await resS.text());
 
         renderPesertaPicker();
-        renderSurahPicker();
-        
         console.log("✅ Data HJSON Loaded Successfully");
 
     } catch (err) {
         console.error("❌ Critical Load Error:", err.message);
-        errorBanner(err.message);
-
-        // --- LOGIK KEBAL DATA (FALLBACK) ---
-        state.dataPesertaLelaki = [{nama: "⚠️ FAIL LELAKI TIADA"}];
-        state.dataPesertaPerempuan = [{nama: "⚠️ FAIL PEREMPUAN TIADA"}];
-        state.dataSilibus = { "Asas": [{nama: "Sila Refresh", ms: "0"}] };
-        
+        state.dataPesertaLelaki = [{nama: "⚠️ RALAT DATA"}];
+        state.dataPesertaPerempuan = [{nama: "⚠️ RALAT DATA"}];
+        state.dataSilibus = { "1": [{nama: "Sila Refresh", ms: "0", ayat: 0}] };
         renderPesertaPicker();
-        renderSurahPicker();
     }
 }
 
 // 5. UI RENDERING (WHEEL PICKERS)
+
 function renderPesertaPicker() {
     const jSelect = document.getElementById('jantina');
     const jantina = jSelect ? jSelect.value : "LELAKI";
@@ -106,11 +87,6 @@ function renderPesertaPicker() {
     
     if(!wrapper) return;
     wrapper.innerHTML = "";
-
-    if (!senarai || senarai.length === 0) {
-        wrapper.innerHTML = "<div class='wheel-item'>Tiada Data</div>";
-        return;
-    }
 
     senarai.forEach((p, index) => {
         const item = createWheelItem(p.nama, () => {
@@ -122,28 +98,40 @@ function renderPesertaPicker() {
     });
 }
 
-function renderSurahPicker() {
+function renderTahapPicker() {
+    const wrapper = document.getElementById('tahap-wrapper');
+    if(!wrapper) return;
+    wrapper.innerHTML = "";
+
+    const senaraiTahap = ["1", "2", "3", "4", "5", "6"];
+    
+    senaraiTahap.forEach((t, index) => {
+        const item = createWheelItem(`TAHAP ${t}`, () => {
+            state.selected.tahap = t;
+            highlightSelected('tahap-wrapper', index);
+            renderSurahPicker(t); // Filter surah mengikut tahap
+        });
+        wrapper.appendChild(item);
+        if(index === 0) item.click();
+    });
+}
+
+function renderSurahPicker(tahapTerpilih) {
     const wrapper = document.getElementById('surah-wrapper');
     if(!wrapper) return;
     wrapper.innerHTML = "";
     
-    let allSurahs = [];
-    if (state.dataSilibus) {
-        Object.values(state.dataSilibus).forEach(group => {
-            if (Array.isArray(group)) group.forEach(s => allSurahs.push(s));
-        });
-    }
+    let senaraiSurah = state.dataSilibus[tahapTerpilih] || [];
 
-    if (allSurahs.length === 0) {
-        allSurahs.push({nama: "Tiada Silibus", ms: "0"});
-    }
-
-    allSurahs.forEach((s, index) => {
+    senaraiSurah.forEach((s, index) => {
         const item = createWheelItem(`${s.nama} <small>(m/s ${s.ms})</small>`, () => {
             state.selected.surah = s.nama;
             state.selected.muka = s.ms;
-            const mukaInput = document.getElementById('muka');
-            if(mukaInput) mukaInput.value = s.ms;
+            
+            document.getElementById('muka').value = s.ms;
+            document.getElementById('ayat_mula').value = 1;
+            document.getElementById('ayat_akhir').value = s.ayat;
+
             highlightSelected('surah-wrapper', index);
         });
         wrapper.appendChild(item);
@@ -186,33 +174,25 @@ function highlightSelected(wrapperId, index) {
     if(items[index]) items[index].classList.add('selected');
 }
 
-// 6. AUDIO RECORDING (VOICE NOTE LOGIC)
+// 6. AUDIO RECORDING
 async function toggleRecording() {
     const btn = document.getElementById('recordBtn');
-    if(!btn) return;
-
     if (!state.isRecording) {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             state.mediaRecorder = new MediaRecorder(stream);
             state.audioChunks = [];
-
             state.mediaRecorder.ondataavailable = e => state.audioChunks.push(e.data);
             state.mediaRecorder.onstop = () => {
                 state.audioBlob = new Blob(state.audioChunks, { type: 'audio/ogg; codecs=opus' });
-                const audioPrev = document.getElementById('audioPlayback');
-                const audioCont = document.getElementById('audio-container');
-                if(audioPrev) audioPrev.src = URL.createObjectURL(state.audioBlob);
-                if(audioCont) audioCont.classList.remove('d-none');
+                document.getElementById('audioPlayback').src = URL.createObjectURL(state.audioBlob);
+                document.getElementById('audio-container').classList.remove('d-none');
             };
-
             state.mediaRecorder.start();
             state.isRecording = true;
             btn.classList.add('recording');
             btn.innerHTML = '<i class="fa-solid fa-stop"></i>';
-        } catch (err) {
-            alert("Ralat Mikrofon: Pastikan anda memberi kebenaran akses mikrofon di pelayar.");
-        }
+        } catch (err) { alert("Akses Mikrofon Ditolak"); }
     } else {
         state.mediaRecorder.stop();
         state.isRecording = false;
@@ -221,89 +201,76 @@ async function toggleRecording() {
     }
 }
 
-// 7. SUBMISSION ENGINE (GAS & TELEGRAM)
+// 7. SUBMISSION ENGINE
 async function hantarTasmik() {
-    const mukaVal = document.getElementById('muka').value;
-    const ulasanVal = document.getElementById('catatan').value;
     const btn = document.getElementById('submitBtn');
-
-    if (!state.selected.peserta || !mukaVal || state.selected.peserta.includes("TIADA")) {
-        alert("⚠️ Maklumat tidak lengkap atau data gagal dimuat!");
-        return;
-    }
-
-    if(!confirm(`Hantar rekod tasmik untuk ${state.selected.peserta}?`)) return;
-
+    
     const payload = {
         ustaz: state.currentUstaz,
         peserta: state.selected.peserta,
-        jantina: state.selected.jantina,
+        jenis_bacaan: document.getElementById('jenis_bacaan').value,
+        tahap: "Tahap " + state.selected.tahap,
         surah: state.selected.surah,
-        muka: mukaVal,
+        mukasurat: document.getElementById('muka').value,
+        ayat_mula: document.getElementById('ayat_mula').value,
+        ayat_akhir: document.getElementById('ayat_akhir').value,
         tajwid: state.selected.tajwid,
         fasohah: state.selected.fasohah,
-        ulasan: ulasanVal || "-"
+        ulasan: document.getElementById('catatan').value || "-"
     };
+
+    if (!payload.peserta || !payload.mukasurat) return alert("Maklumat tidak lengkap!");
+    if (!confirm(`Hantar rekod untuk ${payload.peserta}?`)) return;
 
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
     try {
+        // A. Google Sheets
         await fetch(CONFIG.GAS_URL, {
             method: 'POST',
             mode: 'no-cors',
             body: JSON.stringify(payload)
         });
 
+        // B. Telegram Voice Note
         if (state.audioBlob) {
-            const token = CONFIG.BOTS[state.selected.jantina];
             const formData = new FormData();
             formData.append('chat_id', CONFIG.CHAT_ID);
-            formData.append('voice', state.audioBlob, `tasmik_${payload.peserta}.ogg`);
-            formData.append('caption', `🎙️ RAKAMAN TASMIK\n👤 ${payload.peserta}\n📖 ${payload.surah}\n✨ Tajwid: ${payload.tajwid} | Fasohah: ${payload.fasohah}\n✍️ Nota: ${payload.ulasan}`);
+            formData.append('voice', state.audioBlob, `tasmik.ogg`);
+            formData.append('caption', `🎙️ *TASMIK DIGITAL*\n👤 ${payload.peserta}\n📖 ${payload.surah}\n✨ Tajwid: ${payload.tajwid} | Fasohah: ${payload.fasohah}\n✍️ Nota: ${payload.ulasan}`);
+            formData.append('parse_mode', 'Markdown');
 
-            await fetch(`https://api.telegram.org/bot${token}/sendVoice`, {
+            await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendVoice`, {
                 method: 'POST',
                 body: formData
             });
         }
 
-        alert("✅ Berjaya! Rekod tasmik dan audio telah disimpan.");
+        alert("✅ Berjaya Disimpan!");
         location.reload();
 
     } catch (err) {
-        console.error("Submission Error:", err);
-        alert("Ralat penghantaran. Sila cuba sebentar lagi.");
+        alert("Ralat penghantaran.");
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
     }
 }
 
-// 8. UTILITIES (AUTO-SWITCH TOGGLE)
+// 8. UTILITIES
 function toggleUstaz() {
-    // Logik tukar nama secara bergilir
-    if (state.currentUstaz.includes("AIMAN")) {
-        state.currentUstaz = "USTAZ NUAIM";
-    } else {
-        state.currentUstaz = "USTAZ AIMAN";
-    }
-
+    state.currentUstaz = state.currentUstaz.includes("AIMAN") ? "USTAZ NUAIM" : "USTAZ AIMAN";
     localStorage.setItem('ustaz_nama', state.currentUstaz);
     updateUstazUI();
-    
-    // Memberi maklum balas visual melalui console
-    console.log(`🔄 Pentashih ditukar kepada: ${state.currentUstaz}`);
 }
 
 function updateUstazUI() {
     const el = document.getElementById('ustazNameDisplay');
     if(el) el.textContent = state.currentUstaz;
-    
     const floatEl = document.querySelector('.pentashih-float small');
     if(floatEl) {
-        const namaSahaja = state.currentUstaz.replace("USTAZ ", "");
-        floatEl.innerHTML = `PENTASHIH<br>${namaSahaja}`;
+        const nama = state.currentUstaz.replace("USTAZ ", "");
+        floatEl.innerHTML = `PENTASHIH<br>${nama}`;
     }
 }
 
