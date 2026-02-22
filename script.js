@@ -1,8 +1,8 @@
 /**
- * TASMIK QURAN DIGITAL 2026 - CORE ENGINE (ULTRA PRO V2)
+ * TASMIK QURAN DIGITAL 2026 - CORE ENGINE (ULTRA PRO V2.1)
  * ---------------------------------------------------
  * Integrasi: GitHub Pages + Google Apps Script + Google Sheets + Telegram Bot API
- * Update: Robust Fetch Logic & Enhanced Error Handling
+ * Update: Robust Fetch Logic, Enhanced Error Handling & Data Fallback
  */
 
 // 1. KONFIGURASI GLOBAL
@@ -49,11 +49,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderRatingPickers();
 });
 
-// 4. DATA LOADING (ROBUST FETCH HJSON)
+// 4. DATA LOADING (ROBUST FETCH HJSON WITH FALLBACK)
 async function loadInitialData() {
     const ts = new Date().getTime(); // Anti-cache timestamp
     const errorBanner = (msg) => {
         const div = document.createElement('div');
+        div.id = "error-banner-top";
         div.style = "position:fixed; top:0; left:0; background:#ff4757; color:white; width:100%; z-index:9999; text-align:center; padding:10px; font-weight:bold; font-size:12px; box-shadow:0 2px 10px rgba(0,0,0,0.2);";
         div.innerHTML = `⚠️ RALAT SISTEM: ${msg} <br><small>Sila semak nama fail di GitHub (Case-Sensitive)</small>`;
         document.body.prepend(div);
@@ -88,6 +89,15 @@ async function loadInitialData() {
     } catch (err) {
         console.error("❌ Critical Load Error:", err.message);
         errorBanner(err.message);
+
+        // --- LOGIK KEBAL DATA (FALLBACK) ---
+        // Jika gagal muat, masukkan data amaran ke dalam wheel picker supaya app tidak kosong
+        state.dataPesertaLelaki = [{nama: "⚠️ FAIL LELAKI TIADA"}];
+        state.dataPesertaPerempuan = [{nama: "⚠️ FAIL PEREMPUAN TIADA"}];
+        state.dataSilibus = { "Asas": [{nama: "Sila Refresh", ms: "0"}] };
+        
+        renderPesertaPicker();
+        renderSurahPicker();
     }
 }
 
@@ -101,7 +111,7 @@ function renderPesertaPicker() {
     if(!wrapper) return;
     wrapper.innerHTML = "";
 
-    if (senarai.length === 0) {
+    if (!senarai || senarai.length === 0) {
         wrapper.innerHTML = "<div class='wheel-item'>Tiada Data</div>";
         return;
     }
@@ -122,9 +132,15 @@ function renderSurahPicker() {
     wrapper.innerHTML = "";
     
     let allSurahs = [];
-    Object.values(state.dataSilibus).forEach(group => {
-        group.forEach(s => allSurahs.push(s));
-    });
+    if (state.dataSilibus) {
+        Object.values(state.dataSilibus).forEach(group => {
+            if (Array.isArray(group)) group.forEach(s => allSurahs.push(s));
+        });
+    }
+
+    if (allSurahs.length === 0) {
+        allSurahs.push({nama: "Tiada Silibus", ms: "0"});
+    }
 
     allSurahs.forEach((s, index) => {
         const item = createWheelItem(`${s.nama} <small>(m/s ${s.ms})</small>`, () => {
@@ -135,7 +151,7 @@ function renderSurahPicker() {
             highlightSelected('surah-wrapper', index);
         });
         wrapper.appendChild(item);
-        if(s.nama === "An-Naas") item.click();
+        if(index === 0) item.click();
     });
 }
 
@@ -167,7 +183,9 @@ function createWheelItem(content, onClick) {
 }
 
 function highlightSelected(wrapperId, index) {
-    const items = document.getElementById(wrapperId).children;
+    const el = document.getElementById(wrapperId);
+    if(!el) return;
+    const items = el.children;
     Array.from(items).forEach(item => item.classList.remove('selected'));
     if(items[index]) items[index].classList.add('selected');
 }
@@ -213,8 +231,8 @@ async function hantarTasmik() {
     const ulasanVal = document.getElementById('catatan').value;
     const btn = document.getElementById('submitBtn');
 
-    if (!state.selected.peserta || !mukaVal) {
-        alert("⚠️ Maklumat tidak lengkap! Sila pastikan Nama Peserta dan Muka Surat diisi.");
+    if (!state.selected.peserta || !mukaVal || state.selected.peserta.includes("FAIL TIADA")) {
+        alert("⚠️ Maklumat tidak lengkap atau data gagal dimuat!");
         return;
     }
 
