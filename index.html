@@ -3,206 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tasmik Quran 2026 | Professional Edition</title>
+    <title>Daurah Quranic 2026 - Digital Tasmik</title>
 
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-alpha">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#1e5128">
 
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <link rel="stylesheet" href="style.css?v=2026">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css?v=2026.1">
 
     <script src="https://cdn.jsdelivr.net/npm/hjson@3.2.2/bundle/hjson.min.js"></script>
-
-    <style>
-        /* CSS Inline Tambahan untuk Professional Touch */
-        :root {
-            --primary-green: #1e5128;
-            --accent-green: #4e9f3d;
-            --soft-bg: #f4f7f5;
-        }
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--soft-bg);
-            color: #2d3436;
-        }
-        .app-header {
-            background: var(--primary-green);
-            padding: 25px 20px 60px 20px;
-            color: white;
-            border-bottom-left-radius: 30px;
-            border-bottom-right-radius: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .main-container {
-            margin-top: -40px;
-            padding: 0 15px 100px 15px;
-        }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.3);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        .form-label-custom {
-            font-weight: 700;
-            font-size: 0.75rem;
-            color: var(--primary-green);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-            display: block;
-        }
-        .modern-input {
-            width: 100%;
-            border: 2px solid #eef2ee;
-            border-radius: 12px;
-            padding: 12px;
-            font-size: 1rem;
-            transition: 0.3s;
-        }
-        .modern-input:focus {
-            border-color: var(--accent-green);
-            outline: none;
-            box-shadow: 0 0 0 4px rgba(78, 159, 61, 0.1);
-        }
-        /* FAB Buttons */
-        .fab-container {
-            position: fixed;
-            bottom: 25px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: space-around;
-            padding: 0 30px;
-            z-index: 999;
-        }
-        .btn-fab {
-            width: 65px;
-            height: 65px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: white;
-            border: 4px solid white;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-            transition: 0.3s active;
-        }
-        .btn-mic { background: #e74c3c; }
-        .btn-send { background: var(--primary-green); }
-        .btn-fab:active { transform: scale(0.9); }
-        
-        /* Skeleton/Badge */
-        .badge-status {
-            background: rgba(255,255,255,0.2);
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-    </style>
 </head>
-<body>
+<body class="no-scroll">
 
-    <header class="app-header">
-        <div>
-            <h2 class="fw-bold mb-0">Daurah Quranic</h2>
-            <div class="badge-status"><i class="fa-solid fa-circle-check me-1"></i> Sistem Tasmik Digital</div>
-        </div>
-        <div class="text-end" onclick="toggleUstaz()" id="pentashihBtn" style="cursor: pointer;">
-            <div class="fw-bold" id="ustazNameDisplay">USTAZ AIMAN</div>
-            <small class="opacity-75">Tukar Pentashih</small>
-        </div>
-    </header>
+    <a href="index.html" class="btn-home-float" title="Kembali">
+        <img src="logo.png" alt="Logo">
+    </a>
 
-    <main class="main-container">
-        
-        <div class="glass-card">
-            <div class="row g-3">
-                <div class="col-12">
-                    <label class="form-label-custom">Jantina Peserta</label>
-                    <select id="jantina" class="modern-input" onchange="loadPeserta()">
-                        <option value="LELAKI">Lelaki (Pilihan Default)</option>
-                        <option value="PEREMPUAN">Perempuan</option>
-                    </select>
+    <div class="pentashih-float" onclick="toggleUstaz()" id="pentashihBtn">
+        <small id="ustazNameDisplay">USTAZ AIMAN</small>
+    </div>
+
+    <div class="main-card">
+        <div class="scroll-content">
+            
+            <div class="section-group">
+                <label class="form-label">👥 Jantina Peserta</label>
+                <select id="jantina" class="modern-input" onchange="renderPesertaPicker()">
+                    <option value="LELAKI">LELAKI</option>
+                    <option value="PEREMPUAN">PEREMPUAN</option>
+                </select>
+            </div>
+
+            <div class="section-group">
+                <label class="form-label">👤 Nama Pelajar</label>
+                <div id="peserta-picker" class="wheel-picker">
+                    <div id="peserta-wrapper">
+                        </div>
                 </div>
-                <div class="col-12">
-                    <label class="form-label-custom">Nama Pelajar</label>
-                    <div id="peserta-picker" class="wheel-picker">
-                        <div id="peserta-wrapper"></div>
+            </div>
+
+            <div class="section-group">
+                <label class="form-label">📖 Pilih Surah</label>
+                <div id="surah-picker" class="wheel-picker">
+                    <div id="surah-wrapper">
+                        </div>
+                </div>
+            </div>
+
+            <div class="section-group">
+                <label class="form-label">📄 Muka Surat</label>
+                <input type="number" id="muka" class="modern-input" placeholder="Contoh: 604" inputmode="numeric">
+            </div>
+
+            <div class="row-ayat">
+                <div class="flex-grow-1 me-2">
+                    <label class="form-label">✨ Tajwid</label>
+                    <div id="tajwid-picker" class="wheel-picker rating-picker">
+                        <div id="tajwid-wrapper">
+                            </div>
+                    </div>
+                </div>
+                <div class="flex-grow-1 ms-2">
+                    <label class="form-label">🗣️ Fasohah</label>
+                    <div id="fasohah-picker" class="wheel-picker rating-picker">
+                        <div id="fasohah-wrapper">
+                            </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="glass-card">
-            <label class="form-label-custom">Maklumat Hafazan</label>
-            <div class="row g-2">
-                <div class="col-8">
-                    <div id="surah-picker" class="wheel-picker">
-                        <div id="surah-wrapper"></div>
-                    </div>
-                </div>
-                <div class="col-4">
-                    <input type="number" id="muka" class="modern-input h-100" placeholder="Muka">
-                </div>
+            <div class="section-group mt-3">
+                <label class="form-label">✍️ Catatan Pentashih (Opsional)</label>
+                <textarea id="catatan" class="modern-input" rows="2" placeholder="Tulis ulasan di sini..."></textarea>
             </div>
-        </div>
 
-        <div class="glass-card">
-            <div class="row g-3 text-center">
-                <div class="col-6 border-end">
-                    <label class="form-label-custom">Tajwid</label>
-                    <div id="tajwid-picker" class="wheel-picker">
-                        <div id="tajwid-wrapper"></div>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <label class="form-label-custom">Fasohah</label>
-                    <div id="fasohah-picker" class="wheel-picker">
-                        <div id="fasohah-wrapper"></div>
-                    </div>
-                </div>
+            <div id="audio-container" class="mt-3 text-center d-none">
+                <label class="form-label">🎧 Semak Rakaman Suara</label>
+                <audio id="audioPlayback" class="w-100" controls></audio>
             </div>
+
         </div>
+    </div>
 
-        <div class="glass-card">
-            <label class="form-label-custom">Nota Pentashih (Opsional)</label>
-            <textarea id="catatan" class="modern-input" rows="2" placeholder="Tulis ulasan ringkas di sini..."></textarea>
-        </div>
-
-    </main>
-
-    <div class="fab-container">
-        <button id="recordBtn" class="btn-fab btn-mic" onclick="toggleRecording()">
+    <div class="action-buttons">
+        <button id="recordBtn" class="btn-record" onclick="toggleRecording()" title="Rakam Suara">
             <i class="fa-solid fa-microphone"></i>
         </button>
-        <button id="submitBtn" class="btn-fab btn-send" onclick="hantarTasmik()">
+
+        <button class="fab-send" id="submitBtn" onclick="hantarTasmik()" title="Hantar Rekod">
             <i class="fa-solid fa-paper-plane"></i>
         </button>
     </div>
 
-    <audio id="audioPlayback" class="d-none" controls></audio>
-
-    <script src="script.js?v=2026"></script>
     <script>
         // PWA Service Worker Registration
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-                .then(() => console.log("Service Worker Active"))
-                .catch(err => console.log("SW Registration Failed", err));
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js?v=2026')
+                    .then(reg => console.log("SW: PWA Ready", reg.scope))
+                    .catch(err => console.log("SW: Failed", err));
+            });
         }
     </script>
+    <script src="script.js?v=2026.1"></script>
+
 </body>
 </html>
