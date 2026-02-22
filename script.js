@@ -1,27 +1,27 @@
 /**
- * TASMIK QURAN DIGITAL 2026 - CORE ENGINE (PRO VERSION)
+ * TASMIK QURAN DIGITAL 2026 - CORE ENGINE (ULTRA PRO)
  * ---------------------------------------------------
- * Backend: Google Apps Script (GAS)
- * Frontend: GitHub Pages
- * Database: Google Sheets (Multi-Tab)
- * Integration: Telegram Bot API
+ * Integrasi: GitHub Pages + Google Apps Script + Google Sheets + Telegram Bot API
  */
 
 // 1. KONFIGURASI GLOBAL
 const CONFIG = {
-    // GANTIKAN URL INI DENGAN URL DEPLOYMENT GAS ANDA
     GAS_URL: "https://script.google.com/macros/s/AKfycbw1AOdJvjfJT5Edtl58OohjtHxldCqY2SC_v2cG1K5V044895CdyJNK-aKbVoHCmL09/exec",
+    BOTS: {
+        LELAKI: "8154726215:AAG-Pa2UNRHBxP0-j3fffQJ0rMBE8hZt5Rw",
+        PEREMPUAN: "8559339927:AAFWwLyDpS4Z53k1fjpQD0UScq2fUmKY2Gk"
+    },
+    CHAT_ID: "-1003513910680",
     FILES: {
         LELAKI: "peserta_lelaki.hjson",
         PEREMPUAN: "peserta_perempuan.hjson",
         SILIBUS: "silibus.hjson"
-    },
-    DEFAULT_USTAZ: "USTAZ AIMAN"
+    }
 };
 
 // 2. STATE MANAGEMENT
 let state = {
-    currentUstaz: localStorage.getItem('ustaz_nama') || CONFIG.DEFAULT_USTAZ,
+    currentUstaz: localStorage.getItem('ustaz_nama') || "USTAZ AIMAN",
     dataPesertaLelaki: [],
     dataPesertaPerempuan: [],
     dataSilibus: {},
@@ -34,7 +34,9 @@ let state = {
         fasohah: "3"
     },
     isRecording: false,
-    audioBlob: null
+    audioBlob: null,
+    mediaRecorder: null,
+    audioChunks: []
 };
 
 // 3. INITIALIZATION
@@ -46,15 +48,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderRatingPickers();
 });
 
-// 4. DATA LOADING
+// 4. DATA LOADING (HJSON)
 async function loadInitialData() {
     try {
-        const cacheBurst = `?v=${new Date().getTime()}`;
-        
+        const ts = new Date().getTime();
         const [resL, resP, resS] = await Promise.all([
-            fetch(CONFIG.FILES.LELAKI + cacheBurst),
-            fetch(CONFIG.FILES.PEREMPUAN + cacheBurst),
-            fetch(CONFIG.FILES.SILIBUS + cacheBurst)
+            fetch(`${CONFIG.FILES.LELAKI}?v=${ts}`),
+            fetch(`${CONFIG.FILES.PEREMPUAN}?v=${ts}`),
+            fetch(`${CONFIG.FILES.SILIBUS}?v=${ts}`)
         ]);
 
         state.dataPesertaLelaki = Hjson.parse(await resL.text());
@@ -63,15 +64,14 @@ async function loadInitialData() {
 
         renderPesertaPicker();
         renderSurahPicker();
-        
-        console.log("✅ Data Loaded Successfully");
+        console.log("✅ Data HJSON Loaded");
     } catch (err) {
-        console.error("❌ Data Load Error:", err);
-        alert("Ralat memuatkan data. Sila refresh halaman.");
+        console.error("❌ Load Error:", err);
+        alert("Gagal memuatkan data peserta/silibus.");
     }
 }
 
-// 5. UI RENDERING LOGIC
+// 5. UI RENDERING (WHEEL PICKERS)
 function renderPesertaPicker() {
     const jantina = document.getElementById('jantina').value;
     state.selected.jantina = jantina;
@@ -92,14 +92,12 @@ function renderPesertaPicker() {
 function renderSurahPicker() {
     const wrapper = document.getElementById('surah-wrapper');
     wrapper.innerHTML = "";
-    
-    // Flatten silibus data
-    let allSurah = [];
-    Object.keys(state.dataSilibus).forEach(tahap => {
-        state.dataSilibus[tahap].forEach(s => allSurah.push(s));
+    let allSurahs = [];
+    Object.values(state.dataSilibus).forEach(group => {
+        group.forEach(s => allSurahs.push(s));
     });
 
-    allSurah.forEach((s, index) => {
+    allSurahs.forEach((s, index) => {
         const item = createWheelItem(`${s.nama} <small>(m/s ${s.ms})</small>`, () => {
             state.selected.surah = s.nama;
             state.selected.muka = s.ms;
@@ -126,12 +124,11 @@ function renderRatingPickers() {
     });
 }
 
-// 6. HELPER FUNCTIONS
 function createWheelItem(content, onClick) {
     const div = document.createElement('div');
     div.className = 'wheel-item';
     div.innerHTML = content;
-    div.onclick = (e) => {
+    div.onclick = () => {
         onClick();
         div.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
@@ -144,13 +141,44 @@ function highlightSelected(wrapperId, index) {
     if(items[index]) items[index].classList.add('selected');
 }
 
-// 7. ACTION HANDLERS (SUBMISSION)
-async function hantarTasmik() {
-    const mukaInput = document.getElementById('muka').value;
-    const ulasan = document.getElementById('catatan').value;
+// 6. AUDIO RECORDING (VOICE NOTE LOGIC)
+async function toggleRecording() {
+    const btn = document.getElementById('recordBtn');
+    
+    if (!state.isRecording) {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            state.mediaRecorder = new MediaRecorder(stream);
+            state.audioChunks = [];
 
-    if (!state.selected.peserta || !mukaInput) {
-        alert("⚠️ Sila pastikan nama peserta dan muka surat diisi!");
+            state.mediaRecorder.ondataavailable = e => state.audioChunks.push(e.data);
+            state.mediaRecorder.onstop = () => {
+                state.audioBlob = new Blob(state.audioChunks, { type: 'audio/ogg; codecs=opus' });
+                document.getElementById('audioPlayback').src = URL.createObjectURL(state.audioBlob);
+            };
+
+            state.mediaRecorder.start();
+            state.isRecording = true;
+            btn.classList.add('recording');
+            btn.innerHTML = '<i class="fa-solid fa-stop"></i>';
+        } catch (err) {
+            alert("Akses mikrofon ditolak.");
+        }
+    } else {
+        state.mediaRecorder.stop();
+        state.isRecording = false;
+        btn.classList.remove('recording');
+        btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+    }
+}
+
+// 7. SUBMISSION ENGINE (GAS & TELEGRAM)
+async function hantarTasmik() {
+    const mukaVal = document.getElementById('muka').value;
+    const ulasanVal = document.getElementById('catatan').value;
+
+    if (!state.selected.peserta || !mukaVal) {
+        alert("⚠️ Nama peserta atau muka surat tidak lengkap!");
         return;
     }
 
@@ -159,94 +187,66 @@ async function hantarTasmik() {
         peserta: state.selected.peserta,
         jantina: state.selected.jantina,
         surah: state.selected.surah,
-        muka: mukaInput,
+        muka: mukaVal,
         tajwid: state.selected.tajwid,
         fasohah: state.selected.fasohah,
-        ulasan: ulasan || "-"
+        ulasan: ulasanVal || "-"
     };
 
-    // UI Feedback
     const btn = document.getElementById('submitBtn');
-    const originalContent = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
     try {
-        // Post to Google Apps Script
+        // A. Hantar ke Google Sheets (GAS)
         await fetch(CONFIG.GAS_URL, {
             method: 'POST',
-            mode: 'no-cors', // Penting untuk bypass CORS Policy GAS
-            cache: 'no-cache',
-            headers: { 'Content-Type': 'application/json' },
+            mode: 'no-cors',
             body: JSON.stringify(payload)
         });
 
-        // Kerana 'no-cors', kita tak boleh baca response body. 
-        // Kita gunakan timeout sebagai simulasi success feedback.
-        alert(`✅ REKOD BERJAYA!\nNama: ${payload.peserta}\nSurah: ${payload.surah}`);
+        // B. Hantar Audio ke Telegram (Direct API)
+        if (state.audioBlob) {
+            const token = CONFIG.BOTS[state.selected.jantina];
+            const formData = new FormData();
+            formData.append('chat_id', CONFIG.CHAT_ID);
+            formData.append('voice', state.audioBlob, `tasmik_${payload.peserta}.ogg`);
+            formData.append('caption', `🎙️ RAKAMAN TASMIK\n👤 ${payload.peserta}\n📖 ${payload.surah}`);
+
+            await fetch(`https://api.telegram.org/bot${token}/sendVoice`, {
+                method: 'POST',
+                body: formData
+            });
+        }
+
+        alert("✅ Rekod & Audio Berjaya Dihantar!");
         location.reload();
 
     } catch (err) {
         console.error("Submission Error:", err);
-        alert("❌ Ralat penghantaran. Sila cuba lagi.");
+        alert("Gagal menghantar rekod.");
+    } finally {
         btn.disabled = false;
-        btn.innerHTML = originalContent;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
     }
 }
 
-// 8. AUDIO RECORDING (BROWSER COMPATIBLE)
-let mediaRecorder;
-let chunks = [];
-
-async function toggleRecording() {
-    const btn = document.getElementById('recordBtn');
-    
-    if (!state.isRecording) {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            chunks = [];
-
-            mediaRecorder.ondataavailable = e => chunks.push(e.data);
-            mediaRecorder.onstop = () => {
-                state.audioBlob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
-                console.log("🎙️ Recording Captured");
-            };
-
-            mediaRecorder.start();
-            state.isRecording = true;
-            btn.classList.add('recording');
-            btn.innerHTML = '<i class="fa-solid fa-stop"></i>';
-        } catch (err) {
-            alert("Akses mikrofon diperlukan untuk merakam.");
-        }
-    } else {
-        mediaRecorder.stop();
-        state.isRecording = false;
-        btn.classList.remove('recording');
-        btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
-    }
-}
-
-// 9. UTILITIES & STORAGE
+// 8. UTILITIES
 function toggleUstaz() {
-    const newName = prompt("Nama Pentashih:", state.currentUstaz);
-    if (newName && newName.trim() !== "") {
-        state.currentUstaz = newName.toUpperCase();
+    const n = prompt("Nama Pentashih:", state.currentUstaz);
+    if (n) {
+        state.currentUstaz = n.toUpperCase();
         localStorage.setItem('ustaz_nama', state.currentUstaz);
         updateUstazUI();
     }
 }
 
 function updateUstazUI() {
-    const display = document.getElementById('ustazNameDisplay');
-    if(display) display.textContent = state.currentUstaz;
+    const el = document.getElementById('ustazNameDisplay');
+    if(el) el.textContent = state.currentUstaz;
 }
 
 function setupEventListeners() {
-    // Listener untuk pertukaran jantina
-    const jantinaSelect = document.getElementById('jantina');
-    if(jantinaSelect) {
-        jantinaSelect.addEventListener('change', renderPesertaPicker);
-    }
+    const jSelect = document.getElementById('jantina');
+    if(jSelect) jSelect.addEventListener('change', renderPesertaPicker);
 }
