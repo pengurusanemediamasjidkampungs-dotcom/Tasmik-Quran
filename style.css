@@ -1,6 +1,6 @@
 /* TASMIK QURAN 2026 - ULTIMATE PROFESSIONAL STYLESHEET 
    Theme: Emerald Glassmorphism (Mobile-First)
-   Version: 5.0 (Final Anti-Explode & Layout Fix)
+   Version: 6.0 (Julat Ayat & Label Precision Fix)
 */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
@@ -27,7 +27,7 @@ html, body {
     background-color: var(--soft-bg);
     font-family: 'Plus Jakarta Sans', sans-serif;
     color: #191a19;
-    overflow: hidden; /* Penting untuk UX App moden */
+    overflow: hidden; 
 }
 
 /* 2. TOP NAVIGATION (FIX LOGO & PENTASHIH) */
@@ -35,7 +35,7 @@ html, body {
     position: fixed !important;
     top: 15px !important;
     left: 15px !important;
-    width: 50px !important; /* Kekunci fix saiz logo */
+    width: 50px !important; 
     height: 50px !important;
     z-index: 5000;
     overflow: hidden;
@@ -51,8 +51,8 @@ html, body {
 .btn-home-float img {
     width: 100%;
     height: 100%;
-    object-fit: contain; /* Menghalang logo daripada pecah/meletup */
-    padding: 4px; /* Memberi ruang nafas pada logo */
+    object-fit: contain; 
+    padding: 4px; 
 }
 
 .pentashih-float {
@@ -60,7 +60,7 @@ html, body {
     top: 15px !important;
     right: 15px !important;
     min-width: 65px;
-    height: 50px; /* Diselaraskan dengan ketinggian logo */
+    height: 50px; 
     z-index: 5000;
     background: var(--primary-green);
     color: white;
@@ -87,8 +87,8 @@ html, body {
 /* 3. MAIN CONTAINER & CARD */
 .main-card {
     background: white;
-    margin: 85px 15px 20px 15px !important; /* Ruang supaya tidak kena tindih dengan logo */
-    height: calc(100vh - 190px); /* Fit screen secara dinamik */
+    margin: 85px 15px 20px 15px !important; 
+    height: calc(100vh - 190px); 
     border-radius: 25px;
     box-shadow: var(--shadow-premium);
     display: flex;
@@ -107,14 +107,12 @@ html, body {
     padding: 20px;
     overflow-y: auto;
     flex: 1;
-    scrollbar-width: none; /* Sembunyi scrollbar Firefox */
+    scrollbar-width: none; 
 }
 
-.scroll-content::-webkit-scrollbar {
-    display: none; /* Sembunyi scrollbar Chrome/Safari */
-}
+.scroll-content::-webkit-scrollbar { display: none; }
 
-/* 4. FORM ELEMENTS */
+/* 4. FORM ELEMENTS & LABEL REFINEMENT */
 .section-group {
     margin-bottom: 20px;
 }
@@ -122,14 +120,15 @@ html, body {
 .form-label {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start; /* Aligned for better mobile reading */
     gap: 8px;
-    font-size: 0.75rem;
+    font-size: 0.7rem; /* Optimized size */
     font-weight: 800;
     color: var(--primary-green);
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    margin-top: 15px; /* Added spacing from previous element */
 }
 
 .modern-input {
@@ -152,9 +151,9 @@ html, body {
     box-shadow: 0 0 0 4px rgba(78, 159, 61, 0.1);
 }
 
-/* 5. WHEEL PICKER UX */
+/* 5. WHEEL PICKER UX (COMPACT VERSION) */
 .wheel-picker {
-    height: 85px;
+    height: 80px; /* Slightly more compact */
     background: #fdfdfd;
     border: 2px solid #f1f4f1;
     border-radius: 15px;
@@ -166,7 +165,6 @@ html, body {
 
 .wheel-picker::-webkit-scrollbar { display: none; }
 
-/* Highlight Indicator Tengah */
 .wheel-picker::after {
     content: '';
     position: absolute;
@@ -200,21 +198,26 @@ html, body {
     font-weight: 800;
 }
 
-/* 6. GRID LAYOUT FOR RATINGS */
+/* 6. GRID LAYOUT FOR JULAT AYAT & RATINGS */
 .row-ayat {
     display: flex;
     gap: 12px;
+    margin-top: 10px;
 }
 
 .row-ayat > div {
     flex: 1;
 }
 
+.row-ayat .wheel-picker {
+    height: 75px; /* Optimized for dual-wheel display */
+}
+
 .rating-picker {
     height: 75px;
 }
 
-/* 7. ACTION BUTTONS (FAB) */
+/* 7. ACTION BUTTONS (FAB) & BOTTOM FOOTER */
 .btn-record, .fab-send {
     position: fixed !important;
     bottom: 25px !important;
@@ -265,4 +268,5 @@ html, body {
         top: 10px !important;
     }
     .modern-input { padding: 8px; }
+    .form-label { margin-top: 12px; }
 }
